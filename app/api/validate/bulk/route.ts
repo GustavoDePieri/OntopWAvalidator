@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { twilioService } from '@/lib/twilio'
-import { googleSheetsService } from '@/lib/google-sheets'
+import { googleSheetsService, CustomerData } from '@/lib/google-sheets'
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const results = []
-    const updatedCustomers = []
+    const results: any[] = []
+    const updatedCustomers: CustomerData[] = []
 
     // Process customers in batches
     const batchSize = 5
