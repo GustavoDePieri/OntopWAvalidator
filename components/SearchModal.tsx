@@ -45,7 +45,7 @@ export default function SearchModal({
       if (response.ok) {
         setSearchResults(data.results)
         if (data.results.length === 0) {
-          toast.info('No alternative phone numbers found')
+          toast('No alternative phone numbers found', { icon: 'ℹ️' })
         } else {
           toast.success(`Found ${data.results.length} potential phone number(s)`)
         }
