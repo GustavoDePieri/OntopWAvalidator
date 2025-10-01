@@ -44,7 +44,10 @@ export default function SearchModal({
 
       if (response.ok) {
         setSearchResults(data.results)
-        if (data.results.length === 0) {
+        if (data.error) {
+          // Amplemarket API not configured
+          toast.error('Amplemarket API is not configured. Please add your API key to enable phone number search.')
+        } else if (data.results.length === 0) {
           toast('No alternative phone numbers found', { icon: 'ℹ️' })
         } else {
           toast.success(`Found ${data.results.length} potential phone number(s)`)

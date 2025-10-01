@@ -22,13 +22,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const searchResults = await amplemarketService.searchContactPhone({
-      name,
-      email,
-      company,
-      domain,
-      currentPhone
-    })
+    let searchResults = []
+    
+    try {
+      searchResults = await amplemarketService.searchContactPhone({
+        name,
+        email,
+        company,
+        domain,
+        currentPhone
+      })
+    } catch (searchError: any) {
+      console.error('Amplemarket API error:', searchError.message)
+      // If Amplemarket fails, return empty results instead of erroring
+      console.log('Returning empty results due to Amplemarket API error')
+      
+      return NextResponse.json({
+        message: 'Amplemarket API is not available. Please check your API key configuration.',
+        results: [],
+        count: 0,
+        error: 'Amplemarket API not configured or unavailable'
+      })
+    }
 
     return NextResponse.json({
       message: 'Phone search completed',
