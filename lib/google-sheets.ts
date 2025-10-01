@@ -40,7 +40,11 @@ class GoogleSheetsService {
       console.log('🔍 Google Sheets: Service account email:', serviceAccountEmail?.substring(0, 20) + '...')
       
       if (!serviceAccountEmail || !privateKey) {
-        throw new Error('Missing Google Service Account credentials. Please check GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_PRIVATE_KEY environment variables.')
+        console.warn('⚠️ Google Sheets: Credentials not configured - Google Sheets integration disabled')
+        console.warn('⚠️ Google Sheets: Manual import mode active - use the Import & Enrich feature')
+        this.auth = null
+        this.sheets = null
+        return
       }
 
       const credentials = {
@@ -57,7 +61,9 @@ class GoogleSheetsService {
       console.log('✅ Google Sheets: Authentication initialized successfully')
     } catch (error) {
       console.error('❌ Google Sheets: Failed to initialize auth:', error)
-      throw error
+      console.warn('⚠️ Google Sheets: Manual import mode active - use the Import & Enrich feature')
+      this.auth = null
+      this.sheets = null
     }
   }
 
@@ -66,7 +72,8 @@ class GoogleSheetsService {
       console.log('🔍 Google Sheets: Starting getCustomerData...')
       
       if (!this.sheets) {
-        throw new Error('Google Sheets not initialized')
+        console.warn('⚠️ Google Sheets: Not configured - returning empty array')
+        return []
       }
 
       const sheetId = process.env.GOOGLE_SHEET_ID
@@ -155,7 +162,8 @@ class GoogleSheetsService {
   async updateCustomerData(customer: CustomerData): Promise<void> {
     try {
       if (!this.sheets) {
-        throw new Error('Google Sheets not initialized')
+        console.warn('⚠️ Google Sheets: Not configured - skipping update')
+        return
       }
 
       const sheetId = process.env.GOOGLE_SHEET_ID
@@ -197,7 +205,8 @@ class GoogleSheetsService {
   async batchUpdateCustomers(customers: CustomerData[]): Promise<void> {
     try {
       if (!this.sheets) {
-        throw new Error('Google Sheets not initialized')
+        console.warn('⚠️ Google Sheets: Not configured - skipping batch update')
+        return
       }
 
       const sheetId = process.env.GOOGLE_SHEET_ID
