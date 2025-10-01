@@ -117,7 +117,7 @@ class GoogleSheetsService {
         const fullName = `${firstName} ${lastName}`.trim()
         
         // Find the actual row number in the original sheet by looking for this row
-        const originalRowIndex = rows.findIndex(originalRow => 
+        const originalRowIndex = rows.findIndex((originalRow: any[]) => 
           originalRow && originalRow[0] === row[0]
         )
         const actualRowNumber = originalRowIndex + 2 // +2 because we start from row 2
