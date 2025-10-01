@@ -164,21 +164,14 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    console.log(`Saving ${confirmedRows.length} confirmed rows to Google Sheets...`)
+    console.log(`Processing ${confirmedRows.length} confirmed rows (NOT saving to Google Sheets)`)
 
-    // Get current customers to find existing rows or append new ones
-    const existingCustomers = await googleSheetsService.getCustomerData()
-    const existingClientIds = new Map(
-      existingCustomers.map(c => [c.clientId, c])
-    )
-
-    const customersToUpdate: CustomerData[] = []
-
-    confirmedRows.forEach((row: EnrichedRow) => {
-      const existing = existingClientIds.get(row.clientId)
-      
-      const customerData: CustomerData = {
-        id: existing?.id || `customer-${Date.now()}-${Math.random()}`,
+    // NOTE: We do NOT write to Google Sheets anymore
+    // The data stays in the app and can be exported via the Export button
+    
+    const customersToImport: CustomerData[] = confirmedRows.map((row: EnrichedRow, index: number) => {
+      return {
+        id: `customer-imported-${Date.now()}-${index}`,
         clientId: row.clientId,
         firstName: row.firstName,
         lastName: row.lastName,
@@ -191,22 +184,18 @@ export async function PUT(request: NextRequest) {
         mobile: row.normalizedPhone, // Use the normalized/enriched phone
         email: row.email,
         status: 'pending', // Will be validated later
-        lastValidated: existing?.lastValidated || '',
-        row: existing?.row || existingCustomers.length + customersToUpdate.length + 2
+        lastValidated: '',
+        row: index + 2
       }
-
-      customersToUpdate.push(customerData)
     })
 
-    // Batch update to Google Sheets
-    if (customersToUpdate.length > 0) {
-      await googleSheetsService.batchUpdateCustomers(customersToUpdate)
-    }
+    console.log(`✅ Imported ${customersToImport.length} customers into app memory`)
 
     return NextResponse.json({
       success: true,
-      message: `Successfully imported ${customersToUpdate.length} customers`,
-      imported: customersToUpdate.length
+      message: `Successfully imported ${customersToImport.length} customers. Use the Export button to download results.`,
+      imported: customersToImport.length,
+      customers: customersToImport
     })
   } catch (error: any) {
     console.error('Save import error:', error)

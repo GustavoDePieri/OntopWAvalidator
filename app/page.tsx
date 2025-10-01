@@ -15,7 +15,8 @@ import {
   Sparkles,
   FileSpreadsheet,
   TrendingUp,
-  Zap
+  Zap,
+  Download
 } from 'lucide-react'
 import { CustomerData } from '@/lib/google-sheets'
 import CustomerTable from '@/components/CustomerTable'
@@ -112,6 +113,45 @@ export default function Dashboard() {
 
   const handleCustomerSelectionChange = (customerIds: string[]) => {
     setSelectedCustomers(customerIds)
+  }
+
+  const handleExportData = async () => {
+    try {
+      toast.loading('Preparing export...')
+      
+      const response = await fetch('/api/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customers: customers,
+          format: 'csv'
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Export failed')
+      }
+
+      // Download the file
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `validated-customers-${Date.now()}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast.dismiss()
+      toast.success(`Exported ${customers.length} customers successfully!`)
+    } catch (error) {
+      toast.dismiss()
+      toast.error('Failed to export data')
+      console.error('Export error:', error)
+    }
   }
 
   const getStatusStats = () => {
@@ -262,6 +302,15 @@ export default function Dashboard() {
               >
                 <FileSpreadsheet className="h-4 w-4" />
                 <span>Import & Enrich</span>
+              </button>
+
+              <button
+                onClick={handleExportData}
+                disabled={customers.length === 0}
+                className="btn-success flex items-center space-x-2 py-2 px-4"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export Results</span>
               </button>
               
               {selectedCustomers.length > 0 && (
