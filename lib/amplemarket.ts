@@ -155,31 +155,88 @@ class AmplemarketService {
 
   private parseAmplemarketResponse(data: any, params: PhoneSearchParams): ContactSearchResult[] {
     try {
+      console.log('🔍 Parsing Amplemarket response...')
+      
       // Handle different response formats
-      const contacts = data.contacts || data.people || data.results || []
+      let contacts: any[] = []
+      
+      // Check if it's a single person object (from /people/find)
+      if (data.object === 'person') {
+        console.log('📋 Single person object detected')
+        contacts = [data]
+      } 
+      // Check if it's an array of results (from /people/search)
+      else if (data.results && Array.isArray(data.results)) {
+        console.log('📋 Search results array detected')
+        contacts = data.results
+      }
+      // Legacy format support
+      else if (data.contacts || data.people) {
+        console.log('📋 Legacy contacts/people array detected')
+        contacts = data.contacts || data.people || []
+      }
       
       if (contacts.length === 0) {
         console.warn('⚠️ No contacts in response')
         return []
       }
 
-      const results = contacts
-        .filter((contact: any) => contact.phone || contact.mobile_phone || contact.phone_number)
-        .map((contact: any) => ({
-          id: contact.id || `contact-${Date.now()}`,
-          name: contact.name || contact.full_name || '',
-          email: contact.email || '',
-          phone: contact.phone || contact.mobile_phone || contact.phone_number || '',
-          company: contact.company || contact.company_name || '',
-          position: contact.position || contact.title || '',
-          confidence: contact.confidence || contact.score || 0.5,
-        }))
-        .slice(0, 10)
+      console.log(`📊 Processing ${contacts.length} contact(s)...`)
 
-      console.log(`✅ Found ${results.length} phone numbers`)
-      return results
+      // Extract phone numbers from various possible fields
+      const results: ContactSearchResult[] = []
+      
+      for (const contact of contacts) {
+        // Log all keys to see what fields are available
+        console.log('🔑 Available fields:', Object.keys(contact).join(', '))
+        
+        // Try to find phone numbers in various fields
+        const possiblePhoneFields = [
+          'phone', 'mobile_phone', 'phone_number', 'mobile', 'cell',
+          'work_phone', 'direct_phone', 'personal_phone', 'mobile_number',
+          'phone_numbers', 'phones', 'contact_info', 'direct_dial'
+        ]
+        
+        let foundPhone = ''
+        for (const field of possiblePhoneFields) {
+          if (contact[field]) {
+            // Handle arrays of phone numbers
+            if (Array.isArray(contact[field])) {
+              foundPhone = contact[field][0]
+            } else if (typeof contact[field] === 'string') {
+              foundPhone = contact[field]
+            } else if (typeof contact[field] === 'object' && contact[field].number) {
+              foundPhone = contact[field].number
+            }
+            
+            if (foundPhone) {
+              console.log(`📞 Found phone in field '${field}':`, foundPhone)
+              break
+            }
+          }
+        }
+        
+        // Even if no phone is found, log what we have
+        if (!foundPhone) {
+          console.warn('⚠️ No phone number found for:', contact.name || contact.email || 'unknown')
+          console.warn('💡 Checked fields:', possiblePhoneFields.join(', '))
+        } else {
+          results.push({
+            id: contact.id || `contact-${Date.now()}-${Math.random()}`,
+            name: contact.name || contact.full_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || '',
+            email: contact.email || '',
+            phone: foundPhone,
+            company: contact.company?.name || contact.company_name || '',
+            position: contact.position || contact.title || contact.headline || '',
+            confidence: contact.confidence || contact.score || 0.7,
+          })
+        }
+      }
+
+      console.log(`✅ Found ${results.length} phone number(s) out of ${contacts.length} contact(s)`)
+      return results.slice(0, 10)
     } catch (error) {
-      console.error('Error parsing Amplemarket response:', error)
+      console.error('❌ Error parsing Amplemarket response:', error)
       return []
     }
   }
