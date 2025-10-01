@@ -89,9 +89,19 @@ export async function POST(request: NextRequest) {
       console.log(`Fetching suggestions for ${contactsNeedingEnrichment.length} contacts...`)
       
       try {
-        const enrichmentResults = await amplemarketService.batchEnrichContacts(
+        // Add timeout to prevent freezing
+        const enrichmentPromise = amplemarketService.batchEnrichContacts(
           contactsNeedingEnrichment
         )
+        
+        const timeoutPromise = new Promise<Map<string, any[]>>((_, reject) => {
+          setTimeout(() => reject(new Error('Enrichment timeout')), 30000) // 30 second timeout
+        })
+
+        const enrichmentResults = await Promise.race([
+          enrichmentPromise,
+          timeoutPromise
+        ])
 
         // Add suggestions to the normalized rows
         normalizedRows.forEach(row => {
@@ -106,9 +116,10 @@ export async function POST(request: NextRequest) {
         })
 
         console.log(`Enrichment completed. Found suggestions for ${Array.from(enrichmentResults.values()).filter(s => s.length > 0).length} contacts`)
-      } catch (error) {
-        console.error('Enrichment error:', error)
-        // Continue without enrichment data
+      } catch (error: any) {
+        console.error('Enrichment error:', error.message || error)
+        console.log('Continuing without enrichment data...')
+        // Continue without enrichment data - don't fail the entire import
       }
     }
 

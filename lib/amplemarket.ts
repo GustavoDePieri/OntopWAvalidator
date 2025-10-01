@@ -190,11 +190,25 @@ class AmplemarketService {
   }>): Promise<Map<string, ContactSearchResult[]>> {
     const results = new Map<string, ContactSearchResult[]>()
     
-    // Process in batches to avoid rate limiting
-    const batchSize = 3
+    // Check if API is configured
+    if (!this.validateApiKey()) {
+      console.warn('Amplemarket API key not configured - skipping enrichment')
+      return results
+    }
     
-    for (let i = 0; i < contacts.length; i += batchSize) {
-      const batch = contacts.slice(i, i + batchSize)
+    // Limit number of contacts to process to avoid timeouts
+    const maxContacts = 20
+    const contactsToProcess = contacts.slice(0, maxContacts)
+    
+    if (contacts.length > maxContacts) {
+      console.log(`Limiting enrichment to first ${maxContacts} contacts (out of ${contacts.length})`)
+    }
+    
+    // Process in batches to avoid rate limiting
+    const batchSize = 5 // Increased batch size
+    
+    for (let i = 0; i < contactsToProcess.length; i += batchSize) {
+      const batch = contactsToProcess.slice(i, i + batchSize)
       
       const batchPromises = batch.map(async (contact) => {
         try {
@@ -218,9 +232,9 @@ class AmplemarketService {
         results.set(clientId, suggestions)
       })
       
-      // Add delay between batches
-      if (i + batchSize < contacts.length) {
-        await new Promise(resolve => setTimeout(resolve, 2000))
+      // Reduced delay between batches
+      if (i + batchSize < contactsToProcess.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Reduced from 2s to 1s
       }
     }
     
