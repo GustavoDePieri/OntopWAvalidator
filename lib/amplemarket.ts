@@ -41,78 +41,107 @@ class AmplemarketService {
       console.log('✅ Amplemarket API key present:', this.apiKey.substring(0, 10) + '...')
       console.log('🌐 Base URL:', this.baseUrl)
 
-      // Build search query
-      const searchParams = new URLSearchParams()
-      
-      if (params.name) {
-        searchParams.append('name', params.name)
-      }
-      
+      // Strategy 1: Try GET /people/find with email (most specific - per Amplemarket docs)
       if (params.email) {
-        searchParams.append('email', params.email)
-      }
-      
-      if (params.company) {
-        searchParams.append('company', params.company)
-      }
-      
-      if (params.domain) {
-        searchParams.append('domain', params.domain)
-      }
-
-      // Try multiple possible endpoints (based on Amplemarket API docs)
-      const endpoints = [
-        { method: 'POST', path: '/people/search', name: 'POST /people/search' }, // Primary endpoint - requires POST
-        { method: 'POST', path: '/contacts/enrich', name: 'POST /contacts/enrich' },
-        { method: 'GET', path: '/people', name: 'GET /people' },
-        { method: 'GET', path: '/contacts', name: 'GET /contacts' },
-      ]
-
-      for (const endpoint of endpoints) {
         try {
-          console.log(`📤 Trying ${endpoint.name}: ${this.baseUrl}${endpoint.path}`)
+          console.log('📤 Strategy 1: GET /people/find?email=...')
+          const findByEmailUrl = `${this.baseUrl}/people/find?email=${encodeURIComponent(params.email)}`
+          console.log('🔗 URL:', findByEmailUrl)
           
-          let response
-          if (endpoint.method === 'GET') {
-            response = await axios.get(`${this.baseUrl}${endpoint.path}`, {
-              headers: {
-                'Authorization': `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json',
-              },
-              params: searchParams,
-              timeout: 10000,
-            })
-          } else {
-            response = await axios.post(`${this.baseUrl}${endpoint.path}`, {
-              name: params.name,
-              email: params.email,
-              company: params.company,
-              domain: params.domain
-            }, {
-              headers: {
-                'Authorization': `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json',
-              },
-              timeout: 10000,
-            })
-          }
+          const response = await axios.get(findByEmailUrl, {
+            headers: {
+              'Authorization': `Bearer ${this.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            timeout: 10000,
+          })
 
-          console.log(`✅ ${endpoint.name} SUCCESS - Status:`, response.status)
+          console.log('✅ GET /people/find SUCCESS - Status:', response.status)
           console.log('📥 Response data:', JSON.stringify(response.data, null, 2))
 
           const results = this.parseAmplemarketResponse(response.data, params)
           if (results.length > 0) {
-            console.log(`🎉 Found ${results.length} results with ${endpoint.name}!`)
+            console.log(`🎉 Found ${results.length} phone numbers!`)
             return results
           }
         } catch (error: any) {
-          console.log(`❌ ${endpoint.name} failed:`, error.response?.status || error.message)
-          // Continue to next endpoint
+          console.log('❌ GET /people/find (by email) failed:', error.response?.status || error.message)
         }
       }
 
-      // If all endpoints fail, return mock data
-      console.warn('⚠️ All API endpoints failed, returning mock data')
+      // Strategy 2: Try GET /people/find with name + company_name
+      if (params.name && params.company) {
+        try {
+          console.log('📤 Strategy 2: GET /people/find?name=...&company_name=...')
+          const findParams = new URLSearchParams()
+          findParams.append('name', params.name)
+          findParams.append('company_name', params.company)
+          const findByNameUrl = `${this.baseUrl}/people/find?${findParams.toString()}`
+          console.log('🔗 URL:', findByNameUrl)
+          
+          const response = await axios.get(findByNameUrl, {
+            headers: {
+              'Authorization': `Bearer ${this.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            timeout: 10000,
+          })
+
+          console.log('✅ GET /people/find SUCCESS - Status:', response.status)
+          console.log('📥 Response data:', JSON.stringify(response.data, null, 2))
+
+          const results = this.parseAmplemarketResponse(response.data, params)
+          if (results.length > 0) {
+            console.log(`🎉 Found ${results.length} phone numbers!`)
+            return results
+          }
+        } catch (error: any) {
+          console.log('❌ GET /people/find (by name+company) failed:', error.response?.status || error.message)
+        }
+      }
+
+      // Strategy 3: Try POST /people/search (broader search - per Amplemarket docs)
+      try {
+        console.log('📤 Strategy 3: POST /people/search')
+        const searchPayload: any = {
+          page: 1,
+          page_size: 10
+        }
+
+        if (params.name) {
+          searchPayload.person_name = params.name
+        }
+        if (params.company) {
+          searchPayload.company_names = [params.company]
+        }
+
+        console.log('📦 Payload:', JSON.stringify(searchPayload, null, 2))
+
+        const response = await axios.post(`${this.baseUrl}/people/search`, searchPayload, {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+        })
+
+        console.log('✅ POST /people/search SUCCESS - Status:', response.status)
+        console.log('📥 Response data:', JSON.stringify(response.data, null, 2))
+
+        const results = this.parseAmplemarketResponse(response.data, params)
+        if (results.length > 0) {
+          console.log(`🎉 Found ${results.length} phone numbers!`)
+          return results
+        }
+      } catch (error: any) {
+        console.log('❌ POST /people/search failed:', error.response?.status || error.message)
+        if (error.response?.data) {
+          console.log('❌ Error response:', JSON.stringify(error.response.data, null, 2))
+        }
+      }
+
+      // If all strategies fail, return mock data
+      console.warn('⚠️ All API strategies failed, returning mock data')
       return this.getMockSearchResults(params)
     } catch (error: any) {
       console.error('❌ Amplemarket search error:', error.message)
