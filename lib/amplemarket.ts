@@ -59,9 +59,10 @@ class AmplemarketService {
         searchParams.append('domain', params.domain)
       }
 
-      console.log('📤 Sending request to:', `${this.baseUrl}/contacts/search?${searchParams.toString()}`)
+      // Try the people search endpoint instead
+      console.log('📤 Sending request to:', `${this.baseUrl}/people/search?${searchParams.toString()}`)
 
-      const response = await axios.get(`${this.baseUrl}/contacts/search`, {
+      const response = await axios.get(`${this.baseUrl}/people/search`, {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
@@ -73,26 +74,28 @@ class AmplemarketService {
       console.log('📥 Amplemarket response status:', response.status)
       console.log('📥 Amplemarket response data:', JSON.stringify(response.data, null, 2))
 
-      if (!response.data || !response.data.contacts) {
-        console.warn('⚠️ No contacts in response, returning mock data')
-        return this.getMockSearchResults(params)
+      // If that doesn't work, try the contacts endpoint with a different structure
+      if (!response.data || (!response.data.contacts && !response.data.people)) {
+        console.log('⚠️ Trying alternative endpoint: /api/contacts/search')
+        
+        const altResponse = await axios.post(`${this.baseUrl}/api/contacts/search`, {
+          name: params.name,
+          email: params.email,
+          company: params.company,
+          domain: params.domain
+        }, {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+        })
+        
+        console.log('📥 Alternative response:', JSON.stringify(altResponse.data, null, 2))
+        return this.parseAmplemarketResponse(altResponse.data, params)
       }
 
-      const results = response.data.contacts
-        .filter((contact: any) => contact.phone) // Only return contacts with phone numbers
-        .map((contact: any) => ({
-          id: contact.id || `contact-${Date.now()}`,
-          name: contact.name || '',
-          email: contact.email || '',
-          phone: contact.phone || '',
-          company: contact.company || '',
-          position: contact.position || '',
-          confidence: contact.confidence || 0.5,
-        }))
-        .slice(0, 10) // Limit to top 10 results
-
-      console.log(`✅ Found ${results.length} phone numbers`)
-      return results
+      return this.parseAmplemarketResponse(response.data, params)
     } catch (error: any) {
       console.error('❌ Amplemarket search error:', error.message)
       console.error('❌ Error details:', error.response?.data || error)
@@ -103,6 +106,37 @@ class AmplemarketService {
     }
   }
 
+  private parseAmplemarketResponse(data: any, params: PhoneSearchParams): ContactSearchResult[] {
+    try {
+      // Handle different response formats
+      const contacts = data.contacts || data.people || data.results || []
+      
+      if (contacts.length === 0) {
+        console.warn('⚠️ No contacts in response')
+        return []
+      }
+
+      const results = contacts
+        .filter((contact: any) => contact.phone || contact.mobile_phone || contact.phone_number)
+        .map((contact: any) => ({
+          id: contact.id || `contact-${Date.now()}`,
+          name: contact.name || contact.full_name || '',
+          email: contact.email || '',
+          phone: contact.phone || contact.mobile_phone || contact.phone_number || '',
+          company: contact.company || contact.company_name || '',
+          position: contact.position || contact.title || '',
+          confidence: contact.confidence || contact.score || 0.5,
+        }))
+        .slice(0, 10)
+
+      console.log(`✅ Found ${results.length} phone numbers`)
+      return results
+    } catch (error) {
+      console.error('Error parsing Amplemarket response:', error)
+      return []
+    }
+  }
+
   async enrichContactData(email: string): Promise<ContactSearchResult | null> {
     try {
       if (!this.apiKey) {
@@ -110,7 +144,7 @@ class AmplemarketService {
         return null
       }
 
-      const response = await axios.get(`${this.baseUrl}/contacts/enrich`, {
+      const response = await axios.get(`${this.baseUrl}/people/enrich`, {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
