@@ -24,8 +24,8 @@ class AmplemarketService {
 
   constructor() {
     this.apiKey = process.env.AMPLEMARKET_API_KEY || ''
-    // Try the versioned API path
-    this.baseUrl = process.env.AMPLEMARKET_BASE_URL || 'https://api.amplemarket.com/api/v1'
+    // Base URL according to official API docs
+    this.baseUrl = process.env.AMPLEMARKET_BASE_URL || 'https://api.amplemarket.com'
   }
 
   async searchContactPhone(params: PhoneSearchParams): Promise<ContactSearchResult[]> {
@@ -60,12 +60,12 @@ class AmplemarketService {
         searchParams.append('domain', params.domain)
       }
 
-      // Try multiple possible endpoints
+      // Try multiple possible endpoints (based on Amplemarket API docs)
       const endpoints = [
-        { method: 'GET', path: '/people', name: 'GET /people' },
-        { method: 'POST', path: '/people/search', name: 'POST /people/search' },
-        { method: 'GET', path: '/contacts', name: 'GET /contacts' },
+        { method: 'POST', path: '/people/search', name: 'POST /people/search' }, // Primary endpoint - requires POST
         { method: 'POST', path: '/contacts/enrich', name: 'POST /contacts/enrich' },
+        { method: 'GET', path: '/people', name: 'GET /people' },
+        { method: 'GET', path: '/contacts', name: 'GET /contacts' },
       ]
 
       for (const endpoint of endpoints) {
