@@ -287,21 +287,31 @@ export default function Dashboard() {
         <div className="glass-card p-6 mb-8">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex flex-wrap items-center gap-3">
+              
               <button
                 onClick={fetchCustomers}
                 disabled={refreshing}
-                className="btn-secondary flex items-center space-x-2 py-2 px-4"
+                className="btn-primary flex items-center space-x-2 py-2 px-4"
               >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                <span>Refresh</span>
+                {refreshing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <span>Load from Google Sheets</span>
+                  </>
+                )}
               </button>
-              
+
               <button
                 onClick={() => setShowImportModal(true)}
                 className="btn-coral flex items-center space-x-2 py-2 px-4"
               >
                 <FileSpreadsheet className="h-4 w-4" />
-                <span>Import & Enrich</span>
+                <span>Import File</span>
               </button>
 
               <button

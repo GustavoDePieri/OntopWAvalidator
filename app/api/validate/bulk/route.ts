@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // Get current customers
     const allCustomers = await googleSheetsService.getCustomerData()
-    const customersToValidate = customerIds.length > 0 
+    let customersToValidate = customerIds.length > 0 
       ? allCustomers.filter(c => customerIds.includes(c.id))
       : allCustomers
 
@@ -36,12 +36,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Limit bulk validation to prevent timeouts
+    const MAX_CUSTOMERS = 50
+    if (customersToValidate.length > MAX_CUSTOMERS) {
+      console.log(`Limiting validation to first ${MAX_CUSTOMERS} customers (out of ${customersToValidate.length})`)
+      customersToValidate = customersToValidate.slice(0, MAX_CUSTOMERS)
+    }
+
+    console.log(`🔄 Starting bulk validation for ${customersToValidate.length} customers...`)
+
     const results: any[] = []
     const updatedCustomers: CustomerData[] = []
 
     // Process customers in batches
     const batchSize = 5
     for (let i = 0; i < customersToValidate.length; i += batchSize) {
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(customersToValidate.length / batchSize)}`)
       const batch = customersToValidate.slice(i, i + batchSize)
       
       const batchPromises = batch.map(async (customer) => {
@@ -86,13 +96,17 @@ export async function POST(request: NextRequest) {
 
       // Add delay between batches to avoid rate limiting
       if (i + batchSize < customersToValidate.length) {
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Reduced from 2s to 1s
       }
     }
 
-    // Batch update Google Sheets
+    console.log(`✅ Bulk validation completed: ${updatedCustomers.length} customers processed`)
+
+    // Batch update Google Sheets (writes to destination sheet)
     if (updatedCustomers.length > 0) {
+      console.log(`📝 Writing ${updatedCustomers.length} validated customers to destination sheet...`)
       await googleSheetsService.batchUpdateCustomers(updatedCustomers)
+      console.log(`✅ Successfully wrote validated data to destination sheet`)
     }
 
     const successCount = results.filter(r => r.success).length

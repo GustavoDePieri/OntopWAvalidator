@@ -175,16 +175,18 @@ export default function BulkOperations({
       )}
 
       {/* Information Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="glass-card-light p-4 border-ontop-purple-500/30">
         <div className="flex items-start space-x-3">
-          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-blue-800">
-            <p className="font-medium mb-1">Bulk Validation Information:</p>
-            <ul className="space-y-1 text-xs">
-              <li>• Validation is processed in batches to avoid rate limits</li>
-              <li>• Each phone number is validated using Twilio's Lookup API</li>
-              <li>• Results are automatically saved to your Google Sheet</li>
-              <li>• Invalid numbers can be updated using the search feature</li>
+          <AlertCircle className="h-5 w-5 text-ontop-coral-400 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-gray-300">
+            <p className="font-semibold mb-2 text-white">Bulk Validation Information:</p>
+            <ul className="space-y-1.5 text-xs">
+              <li>• <strong>Maximum 50 customers</strong> per bulk validation (to prevent timeouts)</li>
+              <li>• Processed in batches of 5 for optimal performance</li>
+              <li>• Each phone validated with Twilio Lookup API</li>
+              <li>• Results saved to <strong>destination sheet</strong> (not source)</li>
+              <li>• Use "Load from Google Sheets" to get contacts from source</li>
+              <li>• Use "Export Results" to download validated data as CSV</li>
             </ul>
           </div>
         </div>
