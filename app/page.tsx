@@ -12,9 +12,10 @@ import {
   Search,
   Phone,
   Users,
-  Settings,
-  Download,
-  FileSpreadsheet
+  Sparkles,
+  FileSpreadsheet,
+  TrendingUp,
+  Zap
 } from 'lucide-react'
 import { CustomerData } from '@/lib/google-sheets'
 import CustomerTable from '@/components/CustomerTable'
@@ -49,7 +50,7 @@ export default function Dashboard() {
   const checkAuth = async () => {
     try {
       const response = await fetch('/api/auth/me', {
-        credentials: 'include' // Ensure cookies are sent
+        credentials: 'include'
       })
       if (response.ok) {
         const data = await response.json()
@@ -125,36 +126,53 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <RefreshCw className="h-6 w-6 animate-spin text-primary-600" />
-          <span className="text-lg text-gray-600">Loading dashboard...</span>
+      <div className="min-h-screen bg-ontop-navy flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-ontop-purple-500 to-ontop-pink-500 mb-4">
+            <RefreshCw className="h-8 w-8 animate-spin text-white" />
+          </div>
+          <p className="text-lg text-gray-300 font-medium">Loading dashboard...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-ontop-navy relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 animated-gradient opacity-20"></div>
+      
+      {/* Decorative blurs */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-ontop-purple-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-ontop-pink-500/10 rounded-full blur-3xl"></div>
+
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="glass-card-light border-b border-white/5 sticky top-0 z-40 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Phone className="h-8 w-8 text-primary-600" />
-                <h1 className="text-2xl font-bold text-gray-900">WhatsApp Validator</h1>
+              <div className="flex items-center space-x-3">
+                <div className="h-12 w-12 bg-gradient-to-br from-ontop-purple-500 to-ontop-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <Phone className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold gradient-text">WhatsApp Validator</h1>
+                  <p className="text-xs text-gray-400">Intelligent Phone Validation</p>
+                </div>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+              <div className="text-right mr-2">
+                <p className="text-sm text-gray-400">Welcome back</p>
+                <p className="text-sm font-semibold text-gray-200">{user?.name}</p>
+              </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-ontop-navy-light/80 text-gray-300 hover:text-white border border-white/10 hover:border-ontop-coral-500/50 transition-all duration-300"
               >
                 <LogOut className="h-4 w-4" />
-                <span>Logout</span>
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           </div>
@@ -162,97 +180,122 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-6 w-6 text-blue-600" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Total Customers */}
+          <div className="glass-card p-6 hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-400 mb-1">Total Customers</p>
+                <p className="text-3xl font-bold text-white">{stats.total}</p>
+                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" />
+                  All contacts
+                </p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Customers</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-success-100 rounded-lg">
-                <CheckCircle className="h-6 w-6 text-success-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Valid Numbers</p>
-                <p className="text-2xl font-bold text-success-600">{stats.valid}</p>
+              <div className="p-3 bg-gradient-to-br from-ontop-purple-500/20 to-ontop-purple-600/20 rounded-xl border border-ontop-purple-500/30">
+                <Users className="h-8 w-8 text-ontop-purple-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-danger-100 rounded-lg">
-                <XCircle className="h-6 w-6 text-danger-600" />
+          {/* Valid Numbers */}
+          <div className="glass-card p-6 hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-400 mb-1">Valid Numbers</p>
+                <p className="text-3xl font-bold text-success-400">{stats.valid}</p>
+                <p className="text-xs text-gray-500 mt-1">WhatsApp ready</p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Invalid Numbers</p>
-                <p className="text-2xl font-bold text-danger-600">{stats.invalid}</p>
+              <div className="p-3 bg-gradient-to-br from-success-500/20 to-success-600/20 rounded-xl border border-success-500/30">
+                <CheckCircle className="h-8 w-8 text-success-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-warning-100 rounded-lg">
-                <Clock className="h-6 w-6 text-warning-600" />
+          {/* Invalid Numbers */}
+          <div className="glass-card p-6 hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-400 mb-1">Invalid Numbers</p>
+                <p className="text-3xl font-bold text-danger-400">{stats.invalid}</p>
+                <p className="text-xs text-gray-500 mt-1">Needs attention</p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-warning-600">{stats.pending}</p>
+              <div className="p-3 bg-gradient-to-br from-danger-500/20 to-danger-600/20 rounded-xl border border-danger-500/30">
+                <XCircle className="h-8 w-8 text-danger-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* Pending */}
+          <div className="glass-card p-6 hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-400 mb-1">Pending</p>
+                <p className="text-3xl font-bold text-warning-400">{stats.pending}</p>
+                <p className="text-xs text-gray-500 mt-1">Not validated yet</p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-warning-500/20 to-warning-600/20 rounded-xl border border-warning-500/30">
+                <Clock className="h-8 w-8 text-warning-400" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Actions Bar */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="flex flex-col space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={fetchCustomers}
-                  disabled={refreshing}
-                  className="btn-secondary flex items-center space-x-2"
-                >
-                  <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                  <span>Refresh Data</span>
-                </button>
-                
-                <button
-                  onClick={() => setShowImportModal(true)}
-                  className="btn-primary flex items-center space-x-2"
-                >
-                  <FileSpreadsheet className="h-4 w-4" />
-                  <span>Import & Enrich Sheet</span>
-                </button>
-                
-                {selectedCustomers.length > 0 && (
-                  <span className="text-sm text-gray-600">
-                    {selectedCustomers.length} customer(s) selected
+        <div className="glass-card p-6 mb-8">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={fetchCustomers}
+                disabled={refreshing}
+                className="btn-secondary flex items-center space-x-2 py-2 px-4"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+              
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="btn-coral flex items-center space-x-2 py-2 px-4"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                <span>Import & Enrich</span>
+              </button>
+              
+              {selectedCustomers.length > 0 && (
+                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-ontop-purple-500/20 border border-ontop-purple-500/30">
+                  <Sparkles className="h-4 w-4 text-ontop-purple-400" />
+                  <span className="text-sm text-gray-300 font-medium">
+                    {selectedCustomers.length} selected
                   </span>
-                )}
-              </div>
-
-              <BulkOperations
-                selectedCustomers={selectedCustomers}
-                onOperationComplete={fetchCustomers}
-              />
+                </div>
+              )}
             </div>
+
+            <BulkOperations
+              selectedCustomers={selectedCustomers}
+              onOperationComplete={fetchCustomers}
+            />
           </div>
         </div>
 
         {/* Customer Table */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="glass-card overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">Customer Database</h2>
+                <p className="text-sm text-gray-400 mt-1">Manage and validate phone numbers</p>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-ontop-coral-500/10 border border-ontop-coral-500/30">
+                <Zap className="h-4 w-4 text-ontop-coral-400" />
+                <span className="text-sm font-semibold text-ontop-coral-400">AI Powered</span>
+              </div>
+            </div>
+          </div>
+          
           <CustomerTable
             customers={customers}
             onValidateCustomer={handleValidateCustomer}

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { Lock, Mail, Eye, EyeOff } from 'lucide-react'
+import { Lock, Mail, Eye, EyeOff, Sparkles, Phone } from 'lucide-react'
 
 interface LoginForm {
   email: string
@@ -34,7 +34,7 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
-        credentials: 'include', // Ensure cookies are included
+        credentials: 'include',
       })
 
       const result = await response.json()
@@ -44,10 +44,9 @@ export default function LoginPage() {
         toast.success('Login realizado com sucesso! Redirecionando...')
         console.log('Login successful, redirecting...')
         
-        // Wait a bit longer to ensure cookie is properly set
         setTimeout(() => {
           console.log('Redirecting to dashboard...')
-          window.location.replace('/') // Redirect to main dashboard
+          window.location.replace('/')
         }, 500)
       } else {
         console.error('Login failed:', result.error)
@@ -62,48 +61,58 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-ontop-navy relative overflow-hidden flex items-center justify-center px-4">
+      {/* Animated background */}
+      <div className="absolute inset-0 animated-gradient opacity-30"></div>
+      
+      {/* Decorative elements */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-ontop-purple-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-ontop-pink-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-ontop-coral-500/5 rounded-full blur-3xl"></div>
+
+      <div className="max-w-md w-full space-y-8 relative z-10">
+        <div className="glass-card p-8 sm:p-10">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="mx-auto h-12 w-12 bg-primary-600 rounded-full flex items-center justify-center mb-4">
-              <Lock className="h-6 w-6 text-white" />
+            <div className="mx-auto h-16 w-16 bg-gradient-to-br from-ontop-purple-500 to-ontop-pink-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-ontop-purple-500/50">
+              <Phone className="h-8 w-8 text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
-            <p className="text-gray-600 mt-2">Sign in to WhatsApp Validator</p>
+            <h1 className="text-4xl font-bold mb-3">
+              <span className="gradient-text">Welcome Back</span>
+            </h1>
+            <p className="text-gray-400 text-lg">Intelligent Phone Validation System</p>
           </div>
 
           {/* Demo Credentials */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-blue-800 font-medium mb-2">Demo Credentials:</p>
-            <div className="space-y-2">
-              <div>
-                <p className="text-xs text-blue-700 font-medium">Admin Account:</p>
-                <p className="text-xs text-blue-600">Email: admin@whatsappvalidator.com</p>
-                <p className="text-xs text-blue-600">Password: password123</p>
+          <div className="glass-card-light p-4 mb-6 border-ontop-purple-500/30">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="h-4 w-4 text-ontop-coral-400" />
+              <p className="text-sm text-ontop-coral-400 font-semibold">Demo Credentials</p>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <p className="text-xs text-gray-400 font-medium">Admin Account:</p>
+                <p className="text-xs text-gray-300">admin@whatsappvalidator.com</p>
+                <p className="text-xs text-gray-300">password123</p>
               </div>
-              <div>
-                <p className="text-xs text-blue-700 font-medium">Demo User Account:</p>
-                <p className="text-xs text-blue-600">Email: demo@whatsappvalidator.com</p>
-                <p className="text-xs text-blue-600">Password: password123</p>
+              <div className="space-y-1">
+                <p className="text-xs text-gray-400 font-medium">Demo User:</p>
+                <p className="text-xs text-gray-300">demo@whatsappvalidator.com</p>
+                <p className="text-xs text-gray-300">password123</p>
               </div>
             </div>
-            <p className="text-xs text-blue-500 mt-2 italic">
-              🔒 Enhanced security: Rate limiting, account lockout, and secure sessions
-            </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-300 mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-500" />
                 </div>
                 <input
                   {...register('email', {
@@ -114,24 +123,24 @@ export default function LoginPage() {
                     }
                   })}
                   type="email"
-                  className="input-field pl-10"
-                  placeholder="Enter your email"
+                  className="input-field pl-11"
+                  placeholder="your.email@example.com"
                   disabled={isLoading}
                 />
               </div>
               {errors.email && (
-                <p className="text-danger-600 text-sm mt-1">{errors.email.message}</p>
+                <p className="text-danger-400 text-sm mt-2">{errors.email.message}</p>
               )}
             </div>
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-300 mb-2">
                 Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-500" />
                 </div>
                 <input
                   {...register('password', {
@@ -142,25 +151,25 @@ export default function LoginPage() {
                     }
                   })}
                   type={showPassword ? 'text' : 'password'}
-                  className="input-field pl-10 pr-10"
+                  className="input-field pl-11 pr-11"
                   placeholder="Enter your password"
                   disabled={isLoading}
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <EyeOff className="h-5 w-5 text-gray-500 hover:text-gray-300 transition-colors" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <Eye className="h-5 w-5 text-gray-500 hover:text-gray-300 transition-colors" />
                   )}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-danger-600 text-sm mt-1">{errors.password.message}</p>
+                <p className="text-danger-400 text-sm mt-2">{errors.password.message}</p>
               )}
             </div>
 
@@ -168,23 +177,26 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full btn-primary py-3 text-lg font-semibold"
+              className="w-full btn-primary mt-6"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Signing in...
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  <span>Signing in...</span>
                 </div>
               ) : (
-                'Sign In'
+                <span className="flex items-center justify-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  Sign In Securely
+                </span>
               )}
             </button>
           </form>
 
           {/* Footer */}
           <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
-              Secure authentication with JWT tokens
+            <p className="text-sm text-gray-500">
+              Powered by Amplemarket & Twilio APIs
             </p>
           </div>
         </div>
