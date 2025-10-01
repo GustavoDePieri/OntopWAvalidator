@@ -64,12 +64,12 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // NOTE: We do NOT write back to Google Sheets anymore
-    // Data is kept in memory and can be exported later
-    console.log('✅ Customer updated in memory (not writing to Google Sheets)')
+    // Write to DESTINATION sheet (not source)
+    await googleSheetsService.updateCustomerData(customer)
+    console.log('✅ Customer updated in DESTINATION sheet')
     
     return NextResponse.json({ 
-      message: 'Customer updated successfully',
+      message: 'Customer updated successfully in destination sheet',
       customer 
     })
   } catch (error: any) {

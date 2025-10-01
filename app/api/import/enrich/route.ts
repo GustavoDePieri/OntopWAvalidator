@@ -164,11 +164,9 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    console.log(`Processing ${confirmedRows.length} confirmed rows (NOT saving to Google Sheets)`)
+    console.log(`Processing ${confirmedRows.length} confirmed rows to DESTINATION sheet`)
 
-    // NOTE: We do NOT write to Google Sheets anymore
-    // The data stays in the app and can be exported via the Export button
-    
+    // Write to DESTINATION sheet (not source)
     const customersToImport: CustomerData[] = confirmedRows.map((row: EnrichedRow, index: number) => {
       return {
         id: `customer-imported-${Date.now()}-${index}`,
@@ -189,11 +187,16 @@ export async function PUT(request: NextRequest) {
       }
     })
 
-    console.log(`✅ Imported ${customersToImport.length} customers into app memory`)
+    // Write to destination sheet
+    if (customersToImport.length > 0) {
+      await googleSheetsService.batchUpdateCustomers(customersToImport)
+    }
+
+    console.log(`✅ Imported ${customersToImport.length} customers to DESTINATION sheet`)
 
     return NextResponse.json({
       success: true,
-      message: `Successfully imported ${customersToImport.length} customers. Use the Export button to download results.`,
+      message: `Successfully imported ${customersToImport.length} customers to destination sheet.`,
       imported: customersToImport.length,
       customers: customersToImport
     })

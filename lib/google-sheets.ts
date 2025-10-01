@@ -23,6 +23,8 @@ export interface CustomerData {
 class GoogleSheetsService {
   private sheets: any
   private auth: any
+  private sourceSheetId: string | undefined
+  private destinationSheetId: string | undefined
 
   constructor() {
     this.initializeAuth()
@@ -34,9 +36,13 @@ class GoogleSheetsService {
       
       const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
       const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+      this.sourceSheetId = process.env.GOOGLE_SHEET_ID // Source sheet (read-only)
+      this.destinationSheetId = process.env.GOOGLE_SHEET_ID_DESTINATION // Destination sheet (write)
       
       console.log('🔍 Google Sheets: Service account email present:', !!serviceAccountEmail)
       console.log('🔍 Google Sheets: Private key present:', !!privateKey)
+      console.log('🔍 Google Sheets: Source sheet ID present:', !!this.sourceSheetId)
+      console.log('🔍 Google Sheets: Destination sheet ID present:', !!this.destinationSheetId)
       console.log('🔍 Google Sheets: Service account email:', serviceAccountEmail?.substring(0, 20) + '...')
       
       if (!serviceAccountEmail || !privateKey) {
@@ -69,16 +75,16 @@ class GoogleSheetsService {
 
   async getCustomerData(): Promise<CustomerData[]> {
     try {
-      console.log('🔍 Google Sheets: Starting getCustomerData...')
+      console.log('🔍 Google Sheets: Starting getCustomerData from SOURCE sheet...')
       
       if (!this.sheets) {
         console.warn('⚠️ Google Sheets: Not configured - returning empty array')
         return []
       }
 
-      const sheetId = process.env.GOOGLE_SHEET_ID
-      console.log('🔍 Google Sheets: Sheet ID present:', !!sheetId)
-      console.log('🔍 Google Sheets: Sheet ID:', sheetId?.substring(0, 20) + '...')
+      const sheetId = this.sourceSheetId
+      console.log('🔍 Google Sheets: Source Sheet ID present:', !!sheetId)
+      console.log('🔍 Google Sheets: Reading from SOURCE sheet:', sheetId?.substring(0, 20) + '...')
       
       if (!sheetId) {
         throw new Error('Google Sheet ID not configured. Please set GOOGLE_SHEET_ID environment variable.')
@@ -161,15 +167,20 @@ class GoogleSheetsService {
 
   async updateCustomerData(customer: CustomerData): Promise<void> {
     try {
+      console.log('📝 Google Sheets: Writing customer to DESTINATION sheet...')
+      
       if (!this.sheets) {
         console.warn('⚠️ Google Sheets: Not configured - skipping update')
         return
       }
 
-      const sheetId = process.env.GOOGLE_SHEET_ID
+      const sheetId = this.destinationSheetId
       if (!sheetId) {
-        throw new Error('Google Sheet ID not configured')
+        console.warn('⚠️ Google Sheets: Destination sheet not configured - skipping update')
+        return
       }
+      
+      console.log('🔍 Google Sheets: Writing to DESTINATION sheet:', sheetId.substring(0, 20) + '...')
 
       const range = `Sheet1!A${customer.row}:M${customer.row}`
       const values = [[
@@ -204,15 +215,20 @@ class GoogleSheetsService {
 
   async batchUpdateCustomers(customers: CustomerData[]): Promise<void> {
     try {
+      console.log(`📝 Google Sheets: Batch writing ${customers.length} customers to DESTINATION sheet...`)
+      
       if (!this.sheets) {
         console.warn('⚠️ Google Sheets: Not configured - skipping batch update')
         return
       }
 
-      const sheetId = process.env.GOOGLE_SHEET_ID
+      const sheetId = this.destinationSheetId
       if (!sheetId) {
-        throw new Error('Google Sheet ID not configured')
+        console.warn('⚠️ Google Sheets: Destination sheet not configured - skipping batch update')
+        return
       }
+      
+      console.log('🔍 Google Sheets: Writing to DESTINATION sheet:', sheetId.substring(0, 20) + '...')
 
       const requests = customers.map(customer => ({
         range: `Sheet1!A${customer.row}:M${customer.row}`,
