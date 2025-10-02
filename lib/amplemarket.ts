@@ -66,6 +66,11 @@ class AmplemarketService {
           }
         } catch (error: any) {
           console.log('❌ GET /people/find (by email) failed:', error.response?.status || error.message)
+          if (error.response) {
+            console.log('❌ Response status:', error.response.status)
+            console.log('❌ Response headers:', error.response.headers)
+            console.log('❌ Response data:', JSON.stringify(error.response.data, null, 2))
+          }
         }
       }
 
@@ -97,6 +102,10 @@ class AmplemarketService {
           }
         } catch (error: any) {
           console.log('❌ GET /people/find (by name+company) failed:', error.response?.status || error.message)
+          if (error.response) {
+            console.log('❌ Response status:', error.response.status)
+            console.log('❌ Response data:', JSON.stringify(error.response.data, null, 2))
+          }
         }
       }
 
@@ -135,8 +144,10 @@ class AmplemarketService {
         }
       } catch (error: any) {
         console.log('❌ POST /people/search failed:', error.response?.status || error.message)
-        if (error.response?.data) {
-          console.log('❌ Error response:', JSON.stringify(error.response.data, null, 2))
+        if (error.response) {
+          console.log('❌ Response status:', error.response.status)
+          console.log('❌ Response data:', JSON.stringify(error.response.data, null, 2))
+          console.log('❌ Response headers:', error.response.headers)
         }
       }
 
@@ -156,6 +167,7 @@ class AmplemarketService {
   private parseAmplemarketResponse(data: any, params: PhoneSearchParams): ContactSearchResult[] {
     try {
       console.log('🔍 Parsing Amplemarket response...')
+      console.log('📥 Raw response data:', JSON.stringify(data, null, 2))
       
       // Handle different response formats
       let contacts: any[] = []
@@ -170,6 +182,11 @@ class AmplemarketService {
         console.log('📋 Search results array detected')
         contacts = data.results
       }
+      // If the response is directly a person object (no 'object' field)
+      else if (data.id && (data.email || data.name || data.first_name)) {
+        console.log('📋 Direct person object detected')
+        contacts = [data]
+      }
       // Legacy format support
       else if (data.contacts || data.people) {
         console.log('📋 Legacy contacts/people array detected')
@@ -178,6 +195,7 @@ class AmplemarketService {
       
       if (contacts.length === 0) {
         console.warn('⚠️ No contacts in response')
+        console.warn('💡 Response structure:', Object.keys(data).join(', '))
         return []
       }
 
@@ -189,46 +207,70 @@ class AmplemarketService {
       for (const contact of contacts) {
         // Log all keys to see what fields are available
         console.log('🔑 Available fields:', Object.keys(contact).join(', '))
+        console.log('📄 Full contact data:', JSON.stringify(contact, null, 2))
         
-        // Try to find phone numbers in various fields
+        // According to Amplemarket API docs, phone fields are:
+        // - phone_number (general contact number)
+        // - mobile_number (cell phone)
+        // - work_number (office phone)
+        // - sourced_number (from external sources)
+        // - manually_added_number (manually added)
         const possiblePhoneFields = [
-          'phone', 'mobile_phone', 'phone_number', 'mobile', 'cell',
-          'work_phone', 'direct_phone', 'personal_phone', 'mobile_number',
-          'phone_numbers', 'phones', 'contact_info', 'direct_dial'
+          'mobile_number',    // Cell phone (preferred)
+          'phone_number',     // General contact number
+          'work_number',      // Office phone
+          'sourced_number',   // From external sources
+          'manually_added_number', // Manually added
+          'phone',            // Fallback
+          'mobile_phone',     // Alternative naming
+          'mobile',           // Short form
+          'direct_phone',     // Direct dial
+          'cell',             // Cell phone
+          'work_phone',       // Work phone
+          'personal_phone',   // Personal phone
+          'phone_numbers',    // Array of phones
+          'phones',           // Array of phones
+          'direct_dial'       // Direct dial
         ]
         
-        let foundPhone = ''
+        // Collect all phone numbers found
+        let foundPhones: string[] = []
+        
         for (const field of possiblePhoneFields) {
           if (contact[field]) {
             // Handle arrays of phone numbers
             if (Array.isArray(contact[field])) {
-              foundPhone = contact[field][0]
-            } else if (typeof contact[field] === 'string') {
-              foundPhone = contact[field]
+              foundPhones.push(...contact[field].filter((p: any) => p))
+            } else if (typeof contact[field] === 'string' && contact[field].trim()) {
+              foundPhones.push(contact[field].trim())
             } else if (typeof contact[field] === 'object' && contact[field].number) {
-              foundPhone = contact[field].number
-            }
-            
-            if (foundPhone) {
-              console.log(`📞 Found phone in field '${field}':`, foundPhone)
-              break
+              foundPhones.push(contact[field].number)
             }
           }
         }
         
-        // Even if no phone is found, log what we have
-        if (!foundPhone) {
-          console.warn('⚠️ No phone number found for:', contact.name || contact.email || 'unknown')
-          console.warn('💡 Checked fields:', possiblePhoneFields.join(', '))
+        // Remove duplicates and filter out invalid phones
+        foundPhones = [...new Set(foundPhones)].filter(phone => 
+          phone && phone.length > 5 // Basic validation
+        )
+        
+        if (foundPhones.length === 0) {
+          console.warn('⚠️ No phone number found for:', contact.name || contact.first_name || contact.email || 'unknown')
+          console.warn('💡 Contact object:', JSON.stringify(contact, null, 2))
         } else {
-          results.push({
-            id: contact.id || `contact-${Date.now()}-${Math.random()}`,
-            name: contact.name || contact.full_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || '',
-            email: contact.email || '',
-            phone: foundPhone,
-            company: contact.company?.name || contact.company_name || '',
-            position: contact.position || contact.title || contact.headline || '',
-            confidence: contact.confidence || contact.score || 0.7,
+          console.log(`📞 Found ${foundPhones.length} phone number(s):`, foundPhones)
+          
+          // Create a result for each unique phone number found
+          foundPhones.forEach((phone, index) => {
+            results.push({
+              id: contact.id ? `${contact.id}-${index}` : `contact-${Date.now()}-${Math.random()}`,
+              name: contact.name || contact.full_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || '',
+              email: contact.email || contact.work_email || contact.personal_email || '',
+              phone: phone,
+              company: contact.company?.name || contact.company_name || contact.current_company || '',
+              position: contact.position || contact.title || contact.headline || contact.current_position || '',
+              confidence: contact.confidence || contact.score || 0.7,
+            })
           })
         }
       }
@@ -237,6 +279,7 @@ class AmplemarketService {
       return results.slice(0, 10)
     } catch (error) {
       console.error('❌ Error parsing Amplemarket response:', error)
+      console.error('❌ Stack trace:', (error as Error).stack)
       return []
     }
   }

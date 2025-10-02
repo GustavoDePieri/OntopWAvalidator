@@ -128,12 +128,22 @@ TWILIO_AUTH_TOKEN=your-twilio-auth-token
 
 #### Amplemarket API
 1. Sign up at [amplemarket.com](https://www.amplemarket.com)
-2. Get API key from dashboard
+2. Navigate to Settings → API ([direct link](https://app.amplemarket.com/settings/api))
+3. Generate a new API key
+4. Copy the key (starts with `amp_live_` or `amp_test_`)
 
 ```env
-AMPLEMARKET_API_KEY=your-amplemarket-api-key
+AMPLEMARKET_API_KEY=amp_live_your_amplemarket_api_key
 AMPLEMARKET_BASE_URL=https://api.amplemarket.com
 ```
+
+**Testing the API:**
+```bash
+# Run the test script to verify Amplemarket is working
+node test-amplemarket.js
+```
+
+See [AMPLEMARKET_SETUP.md](./AMPLEMARKET_SETUP.md) for detailed setup instructions.
 
 ### 3. Google Sheet Setup
 
@@ -313,9 +323,11 @@ The app is fully optimized for Vercel with:
 - Ensure phone numbers are in E.164 format
 
 **Amplemarket search returns no results:**
-- Verify API key is valid
-- Check account has active subscription
-- Review API rate limits
+- Verify API key is valid and starts with `amp_live_` or `amp_test_`
+- Run the test script: `node test-amplemarket.js`
+- Check account has active subscription and credits
+- Review API rate limits (350 requests/minute)
+- See detailed troubleshooting in [AMPLEMARKET_SETUP.md](./AMPLEMARKET_SETUP.md)
 
 ## 📄 License
 
