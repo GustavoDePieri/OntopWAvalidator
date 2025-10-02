@@ -250,7 +250,7 @@ class AmplemarketService {
         }
         
         // Remove duplicates and filter out invalid phones
-        foundPhones = [...new Set(foundPhones)].filter(phone => 
+        foundPhones = Array.from(new Set(foundPhones)).filter(phone => 
           phone && phone.length > 5 // Basic validation
         )
         
