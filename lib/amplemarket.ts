@@ -34,8 +34,8 @@ class AmplemarketService {
       
       if (!this.apiKey) {
         console.warn('⚠️ Amplemarket API key not configured')
-        console.log('💡 Returning mock data for testing...')
-        return this.getMockSearchResults(params)
+        console.log('💡 Returning empty results - configure API key in production')
+        return []
       }
 
       console.log('✅ Amplemarket API key present:', this.apiKey.substring(0, 10) + '...')
@@ -151,16 +151,17 @@ class AmplemarketService {
         }
       }
 
-      // If all strategies fail, return mock data
-      console.warn('⚠️ All API strategies failed, returning mock data')
-      return this.getMockSearchResults(params)
+      // If all strategies fail, return empty array (no mock data in production)
+      console.warn('⚠️ All API strategies failed to find phone numbers')
+      console.log('💡 Amplemarket does not have phone data for this contact')
+      return []
     } catch (error: any) {
       console.error('❌ Amplemarket search error:', error.message)
       console.error('❌ Error details:', error.response?.data || error)
       
-      // Return mock data so the app doesn't break
-      console.log('💡 Returning mock data due to error...')
-      return this.getMockSearchResults(params)
+      // Return empty array instead of mock data
+      console.log('💡 Returning empty results due to API error')
+      return []
     }
   }
 
@@ -325,48 +326,12 @@ class AmplemarketService {
     }
   }
 
+  // Mock data removed - production should only return real data or empty results
+  // Keeping function signature for backwards compatibility during development
   private getMockSearchResults(params: PhoneSearchParams): ContactSearchResult[] {
-    console.log('🎭 Generating mock data for:', params.name || params.email)
-    
-    const mockResults: ContactSearchResult[] = [
-      {
-        id: 'mock-1',
-        name: params.name || 'Contact Person',
-        email: params.email || 'contact@example.com',
-        phone: '+1-555-0101',
-        company: params.company || 'Example Corp',
-        position: 'Sales Manager',
-        confidence: 0.85,
-      },
-      {
-        id: 'mock-2',
-        name: params.name || 'Contact Person',
-        email: params.email || 'contact@example.com',
-        phone: '+1-555-0102',
-        company: params.company || 'Example Corp',
-        position: 'Marketing Director',
-        confidence: 0.75,
-      },
-      {
-        id: 'mock-3',
-        name: params.name || 'Contact Person',
-        email: params.email || 'contact@example.com',
-        phone: '+1-555-0103',
-        company: params.company || 'Example Corp',
-        position: 'Business Development',
-        confidence: 0.65,
-      },
-    ]
-
-    const filtered = mockResults.filter(result => {
-      if (params.currentPhone && result.phone === params.currentPhone) {
-        return false // Don't return the same phone number
-      }
-      return true
-    })
-
-    console.log(`🎭 Returning ${filtered.length} mock results`)
-    return filtered
+    console.log('🎭 Mock data generation disabled in production')
+    console.warn('⚠️ If you need test data, use a test API key or real Amplemarket data')
+    return []
   }
 
   private getMockEnrichmentResult(email: string): ContactSearchResult {
